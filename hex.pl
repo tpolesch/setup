@@ -1,69 +1,53 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 # Convert between decimal and hexadecimal in both directions.
 # Handle signed and unsigned values.
 
 if (scalar(@ARGV) != 1)
 {
-	die "USAGE: hex.pl 0xf|15\n";
+	die "USAGE: $0 0xf|15\n";
 }
 
 my $value = $ARGV[0];
 
-if ($value =~ /0x/)
+if ($value =~ /^0x/)
 {
-    # hexadecimal -> decimal
-    printf "%s -> \n", $value;
-
-    my $u_32 = hex $value;
-    
-    printf "bin: %b\n", $u_32;
-
-    if($u_32 > 0xffff)
-    {
-        # 32bit
-        printf "u_32: %u\n", $u_32;
-        printf "i_32: %d\n", $u_32;
-        exit;
-    }
-
-    if($u_32 > 0xff)
-    {
-        # 16bit
-        my $i_16 = $u_32;
-
-        if (($i_16 & 0x8000) == 0x8000)
-        {
-            # 16bit signed
-            $i_16 |= 0xffff0000;
-        }
-
-        printf "u_16: %u\n", $u_32;
-        printf "i_16: %d\n", $i_16;
-        exit;
-    }
-
-    # 8bit
-    my $i_8 = $u_32;
-
-    if (($i_8 & 0x80) == 0x80)
-    {
-        # 8bit signed
-        $i_8 |= 0xffffff00;
-    }
-
-    printf "u_8: %u\n", $u_32;
-    printf "i_8: %d\n", $i_8;
-    printf "ascii: '%c'\n", $u_32;
-    exit;
+    print("(hexadecimal input)\n");
+    $value = hex($value);
+}
+elsif ($value =~ /^(\d+)/)
+{
+    print("(decimal input)\n");
+    $value = $1;
+}
+else
+{
+    print("(character input)\n");
+    $value = ord($value);
 }
 
-# decimal to hexadecimal
-printf "%d -> 0x%x\n", $value, $value;
-printf "bin: %b\n", $value;
+my $value32 = $value & 0xffffffff;
+my $value16 = $value & 0xffff;
+my $value08 = $value & 0xff;
 
-if (($value >= 0) && ($value <= 0xff))
+printf("hex : %x\n", $value);
+printf("dec : %d\n", $value);
+printf("bin : %b\n", $value);
+printf("u_32: %u\n", convert('L', $value32));
+printf("i_32: %d\n", convert('l', $value32));
+printf("u_16: %u\n", convert('S', $value16));
+printf("i_16: %d\n", convert('s', $value16));
+printf("u_8 : %u\n", convert('C', $value08));
+printf("i_8 : %d\n", convert('c', $value08));
+printf("c_8 : %s\n", chr($value08));
+
+sub convert
 {
-    printf "ascii: '%c'\n", $value;
+    my $format = shift;
+    my $value = shift;
+    return unpack($format, pack($format, $value));
 }
 
