@@ -6,45 +6,60 @@ use warnings;
 # Convert between decimal and hexadecimal in both directions.
 # Handle signed and unsigned values.
 
+my $usage = "USAGE: $0 [0x41 | 65 | A | \"A\" | 'A' ]\n";
+
 if (scalar(@ARGV) != 1)
 {
-	die "USAGE: $0 0xf|15\n";
+	die "$usage";
 }
 
 my $value = $ARGV[0];
 
-if ($value =~ /^0x/)
+if ($value =~ /^(0x[1234567890abcdefABCDEF]+)$/)
 {
-    print("(hexadecimal input)\n");
-    $value = hex($value);
+    $value = hex($1);
 }
-elsif ($value =~ /^(\d+)/)
+elsif ($value =~ /^([-0123456789]+)$/)
 {
-    print("(decimal input)\n");
     $value = $1;
+}
+elsif ($value =~ /^(.)$/)
+{
+    $value = ord($1);
 }
 else
 {
-    print("(character input)\n");
-    $value = ord($value);
+    die "ERROR: Could not interpret $value.\n$usage"
 }
 
-my $value32 = $value & 0xffffffff;
-my $value16 = $value & 0xffff;
-my $value08 = $value & 0xff;
+printf("HEX: 0x%x\n", $value);
+printf("BIN: %b\n", $value);
 
-printf("hex : %x\n", $value);
-printf("dec : %d\n", $value);
-printf("bin : %b\n", $value);
-printf("u_32: %u\n", convert('L', $value32));
-printf("i_32: %d\n", convert('l', $value32));
-printf("u_16: %u\n", convert('S', $value16));
-printf("i_16: %d\n", convert('s', $value16));
-printf("u_8 : %u\n", convert('C', $value08));
-printf("i_8 : %d\n", convert('c', $value08));
-printf("c_8 : %s\n", chr($value08));
+my $U32 = ForceFormat('L', ($value & 0xffffffff));
+my $I32 = ForceFormat('l', ($value & 0xffffffff));
+my $U16 = ForceFormat('S', ($value & 0x0000ffff));
+my $I16 = ForceFormat('s', ($value & 0x0000ffff));
+my $U8  = ForceFormat('C', ($value & 0x000000ff));
+my $I8  = ForceFormat('c', ($value & 0x000000ff));
 
-sub convert
+if ($U32 & 0xffff0000)
+{
+    printf("U32: %u\n", $U32);
+    printf("I32: %d\n", $I32);
+}
+elsif ($U32 & 0xffffff00)
+{
+    printf("U16: %u\n", $U16);
+    printf("I16: %d\n", $I16);
+}
+else
+{
+    printf("U8 : %u\n", $U8);
+    printf("I8 : %d\n", $I8);
+    printf("C8 : %c\n", $U8);
+}
+
+sub ForceFormat
 {
     my $format = shift;
     my $value = shift;
